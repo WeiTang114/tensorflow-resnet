@@ -14,7 +14,7 @@ tf.app.flags.DEFINE_boolean('resume', False,
                             'resume from latest saved state')
 tf.app.flags.DEFINE_boolean('minimal_summaries', True,
                             'produce fewer summaries to save HD space')
-
+tf.app.flags.DEFINE_string('ckpt', None, 'use this ckpt to continue training.')
 
 def top_k_error(predictions, labels, k):
     batch_size = float(FLAGS.batch_size) #tf.shape(predictions)[0]
@@ -67,7 +67,7 @@ def train(is_training, logits, images, labels):
     batchnorm_updates_op = tf.group(*batchnorm_updates)
     train_op = tf.group(apply_gradient_op, batchnorm_updates_op)
 
-    saver = tf.train.Saver(tf.global_variables())
+    saver = tf.train.Saver(tf.global_variables(), write_version=tf.core.protobuf.saver_pb2.SaverDef.V1)
 
     summary_op = tf.summary.merge_all()
 
@@ -84,6 +84,11 @@ def train(is_training, logits, images, labels):
         if not latest:
             print "No checkpoint to continue from in", FLAGS.train_dir
             sys.exit(1)
+        print "resume", latest
+        saver.restore(sess, latest)
+
+    elif FLAGS.ckpt:
+        latest = FLAGS.ckpt
         print "resume", latest
         saver.restore(sess, latest)
 
